@@ -49,4 +49,12 @@ For the calibration step, the hand is to be held still in a resting position. Th
 MPin[5] to contain the PWN pin numbers the motors are connected to. Default = {10,9,6,5,3}.
 ResPos[5], GriPos[5] to be set using the "Servo test 3" script on the arm. 
 Vavg[5] is set during the calibration step. Input 'c' to calibrate as described above. 
-Vary VMax[5] to fine-tune the control of the hand. 
+Vary VMax[5] to fine-tune the control of the hand. The "glove test" scripts can be used. 
+
+### Glove test
+#### Glove test 1
+Displays the voltages at each of the resistive dividers. 
+
+#### Glove test 2
+Sends the voltages over a serial interface. Can be used with the MATLAB scripts: init.m, measure_T.m and terminate.m to measure all 5 fingers over T seconds. 
+
