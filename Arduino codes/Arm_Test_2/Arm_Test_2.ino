@@ -49,18 +49,19 @@ Notes:
 
 Servo L,R,M,P,T;
 const byte MPin[5] = {10,9,6,5,3};    
-const byte ResPos[5] = {0, 100, 180, 180, 0};
-const byte GriPos[5] = {90,0,60,90,100};
-byte  MPos[5] = {ResPos[0], ResPos[1], ResPos[2], ResPos[3], ResPos[4]};
+const byte ResPos[5] = {0, 90, 180, 180, 0};
+const byte GriPos[5] = {90,0,80,90,100};
+int  MPos[5] = {ResPos[0], ResPos[1], ResPos[2], ResPos[3], ResPos[4]};
 byte  m = 0;
 
-const byte RPin[5] = {A1, A2, A3, A4, A5};
+// const byte RPin[5] = {A1, A2, A3, A4, A5};
+const byte RPin[5] = {A0, A1, A2, A3, A4};
 const float RMax[5] = {10000.0, 10000.0, 10000.0, 10000.0, 10000.0};
 const float RMin[5] = { 5000.0,  5000.0,  5000.0,  5000.0,  5000.0};
-unsigned int Vin[5] = {0,0,0,0,0};
+int Vin[5] = {0,0,0,0,0};
 
-unsigned int Vavg[5] = {0,0,0,0,0};
-unsigned int VMax[5] = {15,15,15,50,10};
+int Vavg[5] = {0,0,0,0,0};
+int VMax[5] = {20,-15,15,180,10};
 
 char new_state='q';
 /*
@@ -71,6 +72,8 @@ State list:
 
 boolean newData = false, led_state = false, control_state = false;
 long led_count = 0;
+
+int tf = 0;
 
 void setup ( )
 {
@@ -101,8 +104,9 @@ void loop() {
                 {
                   ReadAll();
                   WriteAll();
-                  PrintState();
-                  delay(250);
+                  trackfinger(tf);                
+                  // PrintState();
+                  // delay(10);
                 }
                 break;
 
@@ -163,17 +167,19 @@ void loop() {
                 for(int i = 0 ; i < 5 ; ++ i) MPos[i] = ResPos[i];
                 WriteAll();
                 PrintState();
-                delay(250);
+                delay(10);
                 new_state = 'q';
                 break;    
 
-    default   : PrintState();
+    default   : // PrintState();
+                trackfinger(tf);
+                Serial.println(Vin[0]);
                 if(control_state == true)
                 {
                   ReadAll();
                   WriteAll();
-                  PrintState();
-                  delay(250);
+                  // PrintState();
+                  // delay(10);
                 }
                 new_state = 'q';
                 break;
@@ -224,33 +230,74 @@ void PrintState()
 
 void ReadAll()
 {
-  for(int m = 0 ; m < 5 ; ++ m) ReadRes(m); 
+  // for(int m = 0 ; m < 5 ; ++ m) ReadRes(m); 
+  long  v_sum[5] = {0,0,0,0,0};
+  for(int i = 0 ; i < 16 ; ++ i)
+  {
+    for(int m = 0 ; m < 5 ; ++ m)
+    {
+      v_sum[m] += analogRead(RPin[m]) - Vavg[m];
+      delay(1);
+    }        
+  }
+  
+  for(int m = 0 ; m < 5 ; ++ m)
+  {
+    Vin[m] = v_sum[m]/16;
+    MPos[m] = float(Vin[m])/float(VMax[m]) * (GriPos[m] - ResPos[m]) + ResPos[m];
+    if(ResPos[m]>GriPos[m])
+    {
+      if(MPos[m]>ResPos[m]) MPos[m] = ResPos[m];
+     else if(MPos[m]<GriPos[m]) MPos[m] = GriPos[m];
+   }
+    else
+    {
+     if(MPos[m]<ResPos[m]) MPos[m] = ResPos[m];
+     else if(MPos[m]>GriPos[m]) MPos[m] = GriPos[m];
+    }
+  }
 }
 
+/* OBSOLETE
 void ReadRes(int m)
 {
+  // Paralellize segment
   long  v_sum = 0;
   for(int i = 0 ; i < 16 ; ++ i)
   {
     v_sum += analogRead(RPin[m]) - Vavg[m];
-    delay(5);
+    delay(1);
   }
   
   Vin[m] = v_sum/16;
 
 //  float R = RDiv*(1024-Vin[m])/1024.0;
 //  MPos[m] = ResPos[m]+(R-RMin[m])/(RMax[m]-RMin[m])*(GriPos[m]-ResPos[m]);
-  MPos[m] = map(Vin[m], 0, VMax[m], ResPos[m], GriPos[m]);
-  MPos[m] = constrain(MPos[m], ResPos[m], GriPos[m]);
+
+// MISTAKE
+  // MPos[m] = map(Vin[m], 0, VMax[m], ResPos[m], GriPos[m]);
+  // MPos[m] = constrain(MPos[m], ResPos[m], GriPos[m]);
+  MPos[m] = float(Vin[m])/float(VMax[m]) * (GriPos[m] - ResPos[m]) + ResPos[m];
+  if(ResPos[m]>GriPos[m])
+  {
+    if(MPos[m]>ResPos[m]) MPos[m] = ResPos[m];
+    else if(MPos[m]<GriPos[m]) MPos[m] = GriPos[m];
+  }
+  else
+  {
+    if(MPos[m]<ResPos[m]) MPos[m] = ResPos[m];
+    else if(MPos[m]>GriPos[m]) MPos[m] = GriPos[m];
+  }
 }
+*/
 
 void WriteAll()
 {
   L.write(MPos[0]);
-  R.write(MPos[1]);
-  M.write(MPos[2]);
-  P.write(MPos[3]);
-  T.write(MPos[4]);
+ // R.write(MPos[1]);
+ // M.write(MPos[2]);
+ // P.write(MPos[3]);
+ // T.write(MPos[4]);
 }
 
 void calibrate()
@@ -271,4 +318,15 @@ void calibrate()
   for(int m = 0 ; m < 5 ; ++ m) Vavg[m] = v_sum[m]/16;
 
   Serial.println("Calibration complete");
+}
+
+void trackfinger(int tf)
+{
+  //for(int i = 0 ; i < 5 ; ++ i )
+  //{
+    Serial.print(Vin[tf]);
+    Serial.print("\t");
+    Serial.print(MPos[tf]);
+  // }
+  Serial.print("\r\n");
 }

@@ -3,7 +3,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                   Set parameters                                      %                              
 T  = 10;            % Set T : recording time in seconds 
-fname = "recs.mat"; % Set file name eg xyz.mat
+fname = "Readings-09-05/test.mat"; % Set file name eg xyz.mat
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Flush Arduino serial buffer
@@ -23,13 +23,13 @@ ii   = 1;
 while t_el < T
     jj = 1;
     while jj <= 5
-        x(ii,jj) = read(arduino,1,"uint16");
-        if ( x(ii,jj) > 1023 )
-            d = uint16(x(ii));
-            d_1 = idivide( d , uint16(256) );
-            d_2 = rem ( d , uint16(256) );
-            x(ii,jj) = d_1 + d_2 * 256;
-        end
+        x(ii,jj) = read(arduino,1,"int16");
+%         if ( x(ii,jj) > 1023 )
+%             d = uint16(x(ii,jj));
+%             d_1 = idivide( d , uint16(256) );
+%             d_2 = rem ( d , uint16(256) );
+%             x(ii,jj) = d_1 + d_2 * 256;
+%         end
         jj = jj + 1;
     end
     % delay(0.001);
@@ -53,6 +53,7 @@ v = x;
 %     jj = jj + 1;
 % end
 
+names = ["Little Finger" "Ring Finger" "Middle Finger" "Pointer Finger" "Thumb"];
 
 % Display recorded signal
 figure;
@@ -61,8 +62,8 @@ while jj <= 5
     subplot(5,1,jj);
     plot(t(1:ii),v(1:ii,jj));
     xlabel("Time (s)");
-    ylabel("Amplitude (V)");
-    title("Voltage vs Time signal");
+    ylabel("Amplitude (10-bit)");
+    title(names(jj));
     xlim([0 T]);
     %ylim([-200 1024]);
     jj = jj + 1;
